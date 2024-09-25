@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/settings.dart';
 
 class AppSettingsScreen extends StatefulWidget {
@@ -17,7 +16,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
   @override
   void initState() {
-    await settings.initPrefs();
+    loading = await settings.initPrefs();
     super.initState();
   }
 
