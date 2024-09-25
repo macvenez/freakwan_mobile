@@ -16,10 +16,12 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
   @override
   void initState() {
-    setState() {
-      loading = settings.initPrefs() as bool;
-    }
-
+    settings.initPrefs().then((loaded) {
+      setState(() {
+        loading = loaded;
+        _chatLevelItem = settings.getChatLevelSetting();
+      });
+    });
     super.initState();
   }
 

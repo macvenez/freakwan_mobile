@@ -10,9 +10,9 @@ class AppSettings {
   }
 
   Future<bool> initPrefs() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getInt('chatLevel') == -1) {
-      await prefs.setInt('chatLevel', 0); //ChatLevel.basic default setting
+    prefs = await SharedPreferences.getInstance();
+    if (prefs!.getInt('chatLevel') == -1) {
+      await prefs!.setInt('chatLevel', 0); //ChatLevel.basic default setting
     }
     return false;
   }

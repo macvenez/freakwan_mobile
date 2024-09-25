@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:freakwan_mobile/screens/app_settings.dart';
+import 'package:freakwan_mobile/screens/app_settings_screen.dart';
 
 //import '../widgets/service_tile.dart';
 //import '../widgets/characteristic_tile.dart';
@@ -10,6 +10,7 @@ import 'package:freakwan_mobile/screens/app_settings.dart';
 import '../utils/snackbar.dart';
 import '../utils/extra.dart';
 import '../utils/messageitem.dart';
+import '../utils/settings.dart';
 
 class DeviceScreen extends StatefulWidget {
   final BluetoothDevice device;
@@ -20,7 +21,7 @@ class DeviceScreen extends StatefulWidget {
   State<DeviceScreen> createState() => _DeviceScreenState();
 }
 
-enum MenuItem { itemOne, itemTwo, itemThree }
+enum MenuItem { showNearby, nodeSettings, itemThree }
 
 class _DeviceScreenState extends State<DeviceScreen> {
   int? _rssi;
