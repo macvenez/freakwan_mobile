@@ -14,7 +14,7 @@ class AppSettings {
     if (prefs.getInt('chatLevel') == -1) {
       await prefs.setInt('chatLevel', 0); //ChatLevel.basic default setting
     }
-    return true;
+    return false;
   }
 
   void setPrefs(String key, int value) async {

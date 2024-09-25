@@ -16,7 +16,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
 
   @override
   void initState() {
-    loading = await settings.initPrefs();
+    setState() {
+      loading = settings.initPrefs() as bool;
+    }
+
     super.initState();
   }
 
