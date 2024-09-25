@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-enum ChatLevel { basic, advanced }
+import '../utils/settings.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -11,31 +10,14 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
+  AppSettings settings = AppSettings();
+
   ChatLevel? _chatLevelItem;
   bool loading = true;
 
-  void initPrefs() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int chatLevel = prefs.getInt('chatLevel') ?? -1;
-
-    if (chatLevel == -1) {
-      await prefs.setInt('chatLevel', 0); //chat level basic
-      chatLevel = 0;
-    }
-    _chatLevelItem = ChatLevel.values[chatLevel];
-    setState(() {
-      loading = false;
-    });
-  }
-
-  void setPrefs(String key, int value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setInt(key, value);
-  }
-
   @override
   void initState() {
-    initPrefs();
+    await settings.initPrefs();
     super.initState();
   }
 
@@ -64,7 +46,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           value: ChatLevel.basic,
                           groupValue: _chatLevelItem,
                           onChanged: (ChatLevel? value) {
-                            setPrefs("chatLevel", value!.index);
+                            settings.setPrefs("chatLevel", value!.index);
                             setState(() {
                               _chatLevelItem = value;
                             });
@@ -77,7 +59,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                           value: ChatLevel.advanced,
                           groupValue: _chatLevelItem,
                           onChanged: (ChatLevel? value) {
-                            setPrefs("chatLevel", value!.index);
+                            settings.setPrefs("chatLevel", value!.index);
                             setState(() {
                               _chatLevelItem = value;
                             });
