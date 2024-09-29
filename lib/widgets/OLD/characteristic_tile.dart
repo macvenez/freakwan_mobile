@@ -12,8 +12,7 @@ class CharacteristicTile extends StatefulWidget {
   final List<DescriptorTile> descriptorTiles;
 
   const CharacteristicTile(
-      {Key? key, required this.characteristic, required this.descriptorTiles})
-      : super(key: key);
+      {super.key, required this.characteristic, required this.descriptorTiles});
 
   @override
   State<CharacteristicTile> createState() => _CharacteristicTileState();
@@ -77,12 +76,12 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
 
   Widget buildUuid(BuildContext context) {
     String uuid = '0x${widget.characteristic.uuid.str.toUpperCase()}';
-    return Text(uuid, style: TextStyle(fontSize: 13));
+    return Text(uuid, style: const TextStyle(fontSize: 13));
   }
 
   Widget buildValue(BuildContext context) {
     return Text(String.fromCharCodes(_value),
-        style: TextStyle(fontSize: 13, color: Colors.grey));
+        style: const TextStyle(fontSize: 13, color: Colors.grey));
   }
 
   Widget buildWriteButton(BuildContext context) {

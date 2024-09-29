@@ -9,7 +9,7 @@ import "../../utils/snackbar.dart";
 class DescriptorTile extends StatefulWidget {
   final BluetoothDescriptor descriptor;
 
-  const DescriptorTile({Key? key, required this.descriptor}) : super(key: key);
+  const DescriptorTile({super.key, required this.descriptor});
 
   @override
   State<DescriptorTile> createState() => _DescriptorTileState();
@@ -71,25 +71,25 @@ class _DescriptorTileState extends State<DescriptorTile> {
 
   Widget buildUuid(BuildContext context) {
     String uuid = '0x${widget.descriptor.uuid.str.toUpperCase()}';
-    return Text(uuid, style: TextStyle(fontSize: 13));
+    return Text(uuid, style: const TextStyle(fontSize: 13));
   }
 
   Widget buildValue(BuildContext context) {
     String data = _value.toString();
-    return Text(data, style: TextStyle(fontSize: 13, color: Colors.grey));
+    return Text(data, style: const TextStyle(fontSize: 13, color: Colors.grey));
   }
 
   Widget buildReadButton(BuildContext context) {
     return TextButton(
-      child: Text("Read"),
       onPressed: onReadPressed,
+      child: const Text("Read"),
     );
   }
 
   Widget buildWriteButton(BuildContext context) {
     return TextButton(
-      child: Text("Write"),
       onPressed: onWritePressed,
+      child: const Text("Write"),
     );
   }
 

@@ -12,6 +12,9 @@ import '../utils/extra.dart';
 import '../utils/messageitem.dart';
 import '../utils/settings.dart';
 
+RegExp batteryRegex =
+    RegExp(r'(?=.*\bbattery\b)(?=.*volts)(?=.*%)', caseSensitive: false);
+
 class DeviceScreen extends StatefulWidget {
   final BluetoothDevice device;
 
@@ -63,9 +66,15 @@ class _DeviceScreenState extends State<DeviceScreen> {
   String? nearbyNodesString;
   bool nearbyNodesDataready = false;
 
+  AppSettings settings = AppSettings();
+  ChatLevel? _chatLevelItem = ChatLevel.basic;
+
   @override
   void initState() {
     super.initState();
+    settings.initPrefs().then((loaded) {
+      _chatLevelItem = settings.getChatLevelSetting();
+    });
 
     chatBoxScrollController.addListener(() {
       if (chatBoxScrollController.position.pixels ==
@@ -154,7 +163,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   void processBuffer(String data) {
-    if (data.startsWith('!')) {
+    if (data.length <= 1) {
+      return;
+    }
+    if (data.startsWith('!') || batteryRegex.hasMatch(data)) {
       setState(() {
         messages.add(MessageItem(data, MessageType.cmdReceived));
       });
@@ -519,13 +531,18 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Widget buildChatBox(BuildContext context) {
+    bool basic = _chatLevelItem?.index == 0 ? false : true;
     return Expanded(
         child: Container(
             color: Colors.blueGrey[50],
             child: SingleChildScrollView(
                 controller: chatBoxScrollController,
                 child: Column(
-                    children: messages
+                    children: (!basic
+                            ? messages.where((item) =>
+                                item.type == MessageType.msgReceived ||
+                                item.type == MessageType.msgSent)
+                            : messages)
                         .map((message) => buildMessage(context, message))
                         .toList()))));
   }
@@ -622,6 +639,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
             .jumpTo(chatBoxScrollController.position.maxScrollExtent);
       });
     }
+
     return ScaffoldMessenger(
       key: Snackbar.snackBarKeyC,
       child: Scaffold(
@@ -630,12 +648,19 @@ class _DeviceScreenState extends State<DeviceScreen> {
           actions: [
             buildConnectButton(context),
             IconButton(
-                onPressed: () {
+                onPressed: () async {
                   MaterialPageRoute route = MaterialPageRoute(
-                      builder: (context) => AppSettingsScreen(),
+                      builder: (context) => const AppSettingsScreen(),
                       settings:
                           const RouteSettings(name: '/AppSettingsScreen'));
-                  Navigator.of(context).push(route);
+                  final result = await Navigator.of(context).push(route);
+                  if (result != null) {
+                    //when we're coming from settings page we need to refresh this page to account for new settings
+                    setState(() {
+                      _chatLevelItem = settings.getChatLevelSetting();
+                      //Snackbar.show(ABC.c, result, success: true);
+                    });
+                  }
                 },
                 icon: const Icon(Icons.settings))
           ],

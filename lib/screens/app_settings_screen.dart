@@ -28,11 +28,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return Scaffold(body: CircularProgressIndicator());
+      return const Scaffold(body: CircularProgressIndicator());
     }
     return ScaffoldMessenger(
         child: Scaffold(
             appBar: AppBar(
+              leading: BackButton(
+                onPressed: () => {Navigator.maybePop(context, "pleaseReload")},
+              ),
               title: const Text("App settings"),
             ),
             body: Column(
