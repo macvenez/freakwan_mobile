@@ -1,4 +1,7 @@
 lib/widgets/OLD/
+linux/
+windows/
+web/
 # Miscellaneous
 *.class
 *.log
