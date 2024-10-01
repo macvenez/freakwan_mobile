@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:developer';
+//import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -15,6 +15,19 @@ import '../utils/settings.dart';
 
 RegExp batteryRegex =
     RegExp(r'(?=.*\bbattery\b)(?=.*volts)(?=.*%)', caseSensitive: false);
+
+RegExp presetRegex =
+    RegExp(r'(?=.*Setting)(?=.*bw:)(?=.*cr:)(?=.*sp:)', caseSensitive: false);
+
+const List<String> radioPresetsList = <String>[
+  'superfar',
+  'veryfar',
+  'far',
+  'mid',
+  'fast',
+  'veryfast',
+  'superfast'
+];
 
 class DeviceScreen extends StatefulWidget {
   final BluetoothDevice device;
@@ -69,6 +82,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   AppSettings settings = AppSettings();
   ChatLevel? _chatLevelItem;
+
+  String nodeSettingsRadioPreset = radioPresetsList.first;
 
   @override
   void initState() {
@@ -169,7 +184,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
     if (data.length <= 1) {
       return;
     }
-    if (data.startsWith('!') || batteryRegex.hasMatch(data)) {
+    if (data.startsWith('!') ||
+        batteryRegex.hasMatch(data) ||
+        presetRegex.hasMatch(data)) {
+      if (presetRegex.hasMatch(data)) {
+        Snackbar.show(ABC.c, "Correctly set radio preset", success: true);
+      }
       setState(() {
         messages.add(MessageItem(data, MessageType.cmdReceived));
       });
@@ -586,29 +606,15 @@ class _DeviceScreenState extends State<DeviceScreen> {
         MenuItemButton(
           onPressed: () async {
             await requestNearbyNodesList(txChannel);
-            await showDialog<String>(
-              context: context,
-              builder: (BuildContext context) => AlertDialog(
-                title: const Text('Nearby nodes'),
-                content: Text('$nearbyNodesString'),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, 'Cancel'),
-                    child: const Text('Close'),
-                  ),
-                  // TextButton(
-                  //   onPressed: () => Navigator.pop(context, 'OK'),
-                  //   child: const Text('OK'),
-                  // ),
-                ],
-              ),
-            );
+            await nearbyNodesDialog(context);
           },
           leadingIcon: const Icon(Icons.device_hub),
           child: const Text('Show nearby nodes'),
         ),
         MenuItemButton(
-          onPressed: () {},
+          onPressed: () {
+            nodeSettingsDialog(context);
+          },
           leadingIcon: const Icon(Icons.settings),
           child: const Text('Settings'),
         ),
@@ -631,6 +637,78 @@ class _DeviceScreenState extends State<DeviceScreen> {
           icon: const Icon(Icons.more_vert),
         );
       },
+    );
+  }
+
+  Future<String?> nodeSettingsDialog(BuildContext context) {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Node settings'),
+        content: Container(
+            padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 22.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Radio preset",
+                ),
+                Row(children: [
+                  DropdownMenu<String>(
+                    initialSelection: radioPresetsList.first,
+                    onSelected: (String? value) {
+                      // This is called when the user selects an item.
+                      setState(() {
+                        nodeSettingsRadioPreset = value!;
+                      });
+                    },
+                    dropdownMenuEntries: radioPresetsList
+                        .map<DropdownMenuEntry<String>>((String value) {
+                      return DropdownMenuEntry<String>(
+                          value: value, label: value);
+                    }).toList(),
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        sendMessageOrCommand(
+                            txChannel, "!preset $nodeSettingsRadioPreset");
+                      },
+                      child: const Icon(Icons.send))
+                ]),
+              ],
+            )),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Cancel'),
+            child: const Text('Close'),
+          ),
+          // TextButton(
+          //   onPressed: () => Navigator.pop(context, 'OK'),
+          //   child: const Text('OK'),
+          // ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> nearbyNodesDialog(BuildContext context) {
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Nearby nodes'),
+        content: Text('$nearbyNodesString'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Cancel'),
+            child: const Text('Close'),
+          ),
+          // TextButton(
+          //   onPressed: () => Navigator.pop(context, 'OK'),
+          //   child: const Text('OK'),
+          // ),
+        ],
+      ),
     );
   }
 
