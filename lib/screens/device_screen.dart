@@ -13,13 +13,16 @@ import '../utils/extra.dart';
 import '../utils/messageitem.dart';
 import '../utils/settings.dart';
 
-RegExp batteryRegex =
-    RegExp(r'(?=.*\bbattery\b)(?=.*volts)(?=.*%)', caseSensitive: false);
+RegExp batteryRegex = RegExp(r'(?=.*\bbattery\b)(?=.*volts)(?=.*%)',
+    caseSensitive:
+        false); //regex to match if a battery status command has been received
 
-RegExp presetRegex =
-    RegExp(r'(?=.*Setting)(?=.*bw:)(?=.*cr:)(?=.*sp:)', caseSensitive: false);
+RegExp presetRegex = RegExp(r'(?=.*Setting)(?=.*bw:)(?=.*cr:)(?=.*sp:)',
+    caseSensitive:
+        false); //regex to match if a valid preset has been set successfully
 
 const List<String> radioPresetsList = <String>[
+  //radio presets which directly match freakwan radio presets names
   'superfar',
   'veryfar',
   'far',
@@ -57,31 +60,35 @@ class _DeviceScreenState extends State<DeviceScreen> {
   late StreamSubscription<bool> _isDisconnectingSubscription;
   //late StreamSubscription<int> _mtuSubscription;
 
-  late BluetoothCharacteristic rxChannel, txChannel;
+  late BluetoothCharacteristic rxChannel,
+      txChannel; //rxChannel and txChannel are those which we need to write to to send and receive commands and messages
 
   List<int> _value = [];
 
-  List<MessageItem> messages = [];
+  List<MessageItem> messages = []; //this list will hold all received messages
 
-  Timer? updateDeviceInfoTask;
+  Timer?
+      updateDeviceInfoTask; //a periodic task to ask the device for info (rssi and battery voltage for now)
 
   late StreamSubscription<List<int>> _lastValueSubscription;
 
   final sendCommandFieldController = TextEditingController();
 
-  final chatBoxScrollController = ScrollController();
+  final chatBoxScrollController =
+      ScrollController(); //used to implement autoscroll
 
   bool autoScroll = true;
 
-  MenuItem? selectedItem;
-
   final FocusNode _buttonFocusNode = FocusNode(debugLabel: 'Menu Button');
 
-  String? nearbyNodesString;
+  String?
+      nearbyNodesString; // this string will be populated when we receive info about nearby nodes (!ls command)
   bool nearbyNodesDataready = false;
 
-  AppSettings settings = AppSettings();
-  ChatLevel? _chatLevelItem;
+  AppSettings settings =
+      AppSettings(); //shared_preferences instances containing user settings regarding the app
+  ChatLevel?
+      _chatLevelItem; //which "chat level" are we on (to display messages and commands or only messages)
 
   String nodeSettingsRadioPreset = radioPresetsList.first;
 
@@ -89,12 +96,14 @@ class _DeviceScreenState extends State<DeviceScreen> {
   void initState() {
     super.initState();
     settings.initPrefs().then((loaded) {
+      //load stored user preferences for the app and update when we get the settings
       setState(() {
         _chatLevelItem = settings.getChatLevelSetting();
       });
     });
 
     chatBoxScrollController.addListener(() {
+      //if the user has scrolled to the bottom of the messages list then we'll autoscroll the new messages
       if (chatBoxScrollController.position.pixels ==
           chatBoxScrollController.position.maxScrollExtent) {
         //Snackbar.show(ABC.c, "END OF SCROLL", success: true);
@@ -119,18 +128,22 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 c.characteristicUuid.toString() ==
                 "6e400002-b5a3-f393-e0a9-e50e24dcca9e");
             await subscribe(
-                rxChannel); //c.setNotifyValue(c.isNotifying == false);
-            requestDeviceInfo(txChannel);
+                rxChannel); //we'll subscribe to the rxChannel and wait for new messages coming from the node
+            requestDeviceInfo(
+                txChannel); //ask the device its informations for the first time
             if (updateDeviceInfoTask?.isActive != true) {
+              //check if the periodic task already exists to avoid creating multiple ones
               updateDeviceInfoTask = Timer.periodic(
                 const Duration(
                   seconds: 20,
                 ),
-                (t) => requestDeviceInfo(txChannel),
+                (t) => requestDeviceInfo(
+                    txChannel), //each 20 seconds we'll ask the device for info, processBuffer will process all relative informations
               );
             }
 
             _lastValueSubscription = rxChannel.lastValueStream.listen((value) {
+              //we'll process all messages received from the device
               _value = value;
               processBuffer(String.fromCharCodes(_value));
             });
@@ -181,29 +194,50 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   void processBuffer(String data) {
+    //that's the main function to process all messages received from the node and decide which are relative to commands and which are simple messages from other nodes
     if (data.length <= 1) {
+      //filter out all empty messages
       return;
     }
     if (data.startsWith('!') ||
         batteryRegex.hasMatch(data) ||
-        presetRegex.hasMatch(data)) {
+        presetRegex.hasMatch(data) ||
+        data.contains("Nobody around...") ||
+        RegExp(r'^\d+.*RSSI.*nodes').hasMatch(data)) {
+      //various regexps for commands implemented by now
       if (presetRegex.hasMatch(data)) {
         Snackbar.show(ABC.c, "Correctly set radio preset", success: true);
       }
+      if (data.contains("Nobody around...") ||
+          RegExp(r'^\d+.*RSSI.*nodes').hasMatch(data)) {
+        setState(() {
+          nearbyNodesString = data;
+          nearbyNodesDataready = true;
+        });
+      }
+      if (batteryRegex.hasMatch(data)) {
+        //if we have a match for battery data we'll try to extract battery voltage and charge percent
+        int startIndex = data.indexOf("battery");
+        int endIndex = data.indexOf("%", startIndex + 7);
+        try {
+          _batteryPercent = int.parse(data.substring(startIndex + 8, endIndex));
+          startIndex = data.indexOf("%, ");
+          endIndex = data.indexOf("volts", startIndex + 3);
+          _batteryVoltage =
+              double.parse(data.substring(startIndex + 3, endIndex - 1));
+        } catch (e) {
+          // Snackbar.show(ABC.c, prettyException("Not battery data", e),
+          //     success: false);
+        }
+      }
       setState(() {
+        //we'll add the message to the list with type cmdReceived, this will trigger a rebuild of the interface containing messages
         messages.add(MessageItem(data, MessageType.cmdReceived));
       });
     } else {
+      //if all previous regexps are not matched it must be a message originated from another node
       setState(() {
         messages.add(MessageItem(data, MessageType.msgReceived));
-      });
-    }
-
-    if (data.contains("Nobody around...") ||
-        RegExp(r'^\d+.*RSSI.*nodes').hasMatch(data)) {
-      setState(() {
-        nearbyNodesString = data;
-        nearbyNodesDataready = true;
       });
     }
 
@@ -214,29 +248,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
     } else {
       autoScroll = false;
       //Snackbar.show(ABC.c, "REMOVED AUTOSCROLL", success: true);
-    }
-
-    //  if (autoScroll) {
-    // chatBoxScrollController
-    //     .jumpTo(chatBoxScrollController.position.maxScrollExtent);
-//    }
-
-    try {
-      int startIndex = data.indexOf("battery");
-      int endIndex = data.indexOf("%", startIndex + 7);
-      try {
-        _batteryPercent = int.parse(data.substring(startIndex + 8, endIndex));
-        startIndex = data.indexOf("%, ");
-        endIndex = data.indexOf("volts", startIndex + 3);
-        _batteryVoltage =
-            double.parse(data.substring(startIndex + 3, endIndex - 1));
-      } catch (e) {
-        // Snackbar.show(ABC.c, prettyException("Not battery data", e),
-        //     success: false);
-      }
-    } catch (e) {
-      Snackbar.show(ABC.c, prettyException("Subscribe Error:", e),
-          success: false);
     }
   }
 
@@ -274,7 +285,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Future sendMessageOrCommand(BluetoothCharacteristic c, String data) async {
+    //generic function to send data to the node
     if (data.startsWith('!')) {
+      //check if we're sending a command
       setState(() {
         messages.add(MessageItem(data, MessageType.cmdSent));
       });
@@ -293,11 +306,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
 
     List<int> hexList = data.runes.map((int rune) {
+      //convert char contained in the message string to a corrisponding list of hex values
       return int.parse(rune.toRadixString(16),
           radix: 16); // Parse to int from hex
     }).toList();
 
     try {
+      //try to send data
       await c.write(hexList,
           withoutResponse: c.properties.writeWithoutResponse);
       //Snackbar.show(ABC.c, "Write: Success", success: true);
