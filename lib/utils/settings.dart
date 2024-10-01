@@ -5,13 +5,11 @@ enum ChatLevel { basic, advanced }
 class AppSettings {
   SharedPreferences? prefs;
 
-  AppSettings() {
-    initPrefs();
-  }
+  AppSettings() {}
 
   Future<bool> initPrefs() async {
     prefs = await SharedPreferences.getInstance();
-    if (prefs!.getInt('chatLevel') == -1) {
+    if (prefs!.getInt('chatLevel') == null) {
       await prefs!.setInt('chatLevel', 0); //ChatLevel.basic default setting
     }
     return false;

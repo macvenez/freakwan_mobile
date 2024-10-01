@@ -140,6 +140,7 @@ class _ScanScreenState extends State<ScanScreen> {
 
   List<Widget> _buildScanResultTiles(BuildContext context) {
     return _scanResults
+        .where((d) => d.device.platformName.isNotEmpty)
         .map(
           (r) => ScanResultTile(
             result: r,

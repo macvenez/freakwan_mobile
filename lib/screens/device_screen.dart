@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -67,13 +68,15 @@ class _DeviceScreenState extends State<DeviceScreen> {
   bool nearbyNodesDataready = false;
 
   AppSettings settings = AppSettings();
-  ChatLevel? _chatLevelItem = ChatLevel.basic;
+  ChatLevel? _chatLevelItem;
 
   @override
   void initState() {
     super.initState();
     settings.initPrefs().then((loaded) {
-      _chatLevelItem = settings.getChatLevelSetting();
+      setState(() {
+        _chatLevelItem = settings.getChatLevelSetting();
+      });
     });
 
     chatBoxScrollController.addListener(() {
@@ -633,58 +636,61 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (autoScroll) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        chatBoxScrollController
-            .jumpTo(chatBoxScrollController.position.maxScrollExtent);
-      });
-    }
-
-    return ScaffoldMessenger(
-      key: Snackbar.snackBarKeyC,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.device.platformName),
-          actions: [
-            buildConnectButton(context),
-            IconButton(
-                onPressed: () async {
-                  MaterialPageRoute route = MaterialPageRoute(
-                      builder: (context) => const AppSettingsScreen(),
-                      settings:
-                          const RouteSettings(name: '/AppSettingsScreen'));
-                  final result = await Navigator.of(context).push(route);
-                  if (result != null) {
-                    //when we're coming from settings page we need to refresh this page to account for new settings
-                    setState(() {
-                      _chatLevelItem = settings.getChatLevelSetting();
-                      //Snackbar.show(ABC.c, result, success: true);
-                    });
-                  }
-                },
-                icon: const Icon(Icons.settings))
-          ],
-        ),
-        body: Container(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            children: <Widget>[
-              buildRemoteId(context),
-              ListTile(
-                  contentPadding: const EdgeInsets.only(right: 0.0),
-                  leading: buildRssiTile(context),
-                  title: buildBatteryTile(context),
-                  trailing: buildDotMenu(context)),
-              buildChatBox(context),
-              buildSendCommandBox(context),
-
-              //buildChatBox(context),
-              //buildMtuTile(context),
-              //..._buildServiceTiles(context, widget.device),
+    if (_chatLevelItem == null) {
+      return const Scaffold(body: CircularProgressIndicator());
+    } else {
+      if (autoScroll) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          chatBoxScrollController
+              .jumpTo(chatBoxScrollController.position.maxScrollExtent);
+        });
+      }
+      return ScaffoldMessenger(
+        key: Snackbar.snackBarKeyC,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(widget.device.platformName),
+            actions: [
+              buildConnectButton(context),
+              IconButton(
+                  onPressed: () async {
+                    MaterialPageRoute route = MaterialPageRoute(
+                        builder: (context) => const AppSettingsScreen(),
+                        settings:
+                            const RouteSettings(name: '/AppSettingsScreen'));
+                    final result = await Navigator.of(context).push(route);
+                    if (result != null) {
+                      //when we're coming from settings page we need to refresh this page to account for new settings
+                      setState(() {
+                        _chatLevelItem = settings.getChatLevelSetting();
+                        //Snackbar.show(ABC.c, result, success: true);
+                      });
+                    }
+                  },
+                  icon: const Icon(Icons.settings))
             ],
           ),
+          body: Container(
+            padding: const EdgeInsets.all(10.0),
+            child: Column(
+              children: <Widget>[
+                buildRemoteId(context),
+                ListTile(
+                    contentPadding: const EdgeInsets.only(right: 0.0),
+                    leading: buildRssiTile(context),
+                    title: buildBatteryTile(context),
+                    trailing: buildDotMenu(context)),
+                buildChatBox(context),
+                buildSendCommandBox(context),
+
+                //buildChatBox(context),
+                //buildMtuTile(context),
+                //..._buildServiceTiles(context, widget.device),
+              ],
+            ),
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 }
