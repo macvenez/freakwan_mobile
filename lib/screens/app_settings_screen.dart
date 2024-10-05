@@ -10,25 +10,16 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
-  // AppSettings settings = AppSettings();
+  ChatLevel? _chatLevelItem;
 
   late final SharedPreferences _prefs;
-  late final _prefsFuture = SharedPreferences.getInstance().then((v) {
-    _prefs = v;
-    _chatLevelItem = ChatLevel.values[_prefs.getInt("chatLevel")];
-  });
-
-  ChatLevel? _chatLevelItem;
-  //bool loading = true;
+  late final _prefsFuture = SharedPreferences.getInstance().then((v) => {
+        _prefs = v,
+        _chatLevelItem = ChatLevel.values[_prefs.getInt("chatLevel")!]
+      });
 
   @override
   void initState() {
-    // settings.initPrefs().then((loaded) {
-    //   setState(() {
-    //     loading = loaded;
-    //     _chatLevelItem = settings.getChatLevelSetting();
-    //   });
-    // });
     super.initState();
   }
 
@@ -89,7 +80,17 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           }
 
           // `_prefs` is not ready yet, show loading bar till then.
-          return const CircularProgressIndicator();
+          return const Scaffold(
+            body: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  CircularProgressIndicator(),
+                ],
+              ),
+            ),
+          );
         },
       ),
     ));
