@@ -23,6 +23,10 @@ class AppSettings {
     _prefs.setInt(key, value);
   }
 
+  Future reloadPrefs() async {
+    return _prefs.reloadCache();
+  }
+
   ChatLevel getChatLevelSetting() {
     if (_prefs.getInt('chatLevel') == null) {
       throw 'chatLevel setting has not been initialized';

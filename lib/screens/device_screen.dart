@@ -1,5 +1,5 @@
 import 'dart:async';
-//import 'dart:developer';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -85,8 +85,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
       nearbyNodesString; // this string will be populated when we receive info about nearby nodes (!ls command)
   bool nearbyNodesDataready = false;
 
-  AppSettings settings =
-      AppSettings(); //shared_preferences instances containing user settings regarding the app
+  final AppSettings _prefs = AppSettings();
+  late var _prefsFuture = _prefs.initPrefs();
+
   ChatLevel?
       _chatLevelItem; //which "chat level" are we on (to display messages and commands or only messages)
 
@@ -95,12 +96,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
   @override
   void initState() {
     super.initState();
-    settings.initPrefs().then((loaded) {
-      //load stored user preferences for the app and update when we get the settings
-      setState(() {
-        _chatLevelItem = settings.getChatLevelSetting();
-      });
-    });
 
     chatBoxScrollController.addListener(() {
       //if the user has scrolled to the bottom of the messages list then we'll autoscroll the new messages
@@ -569,7 +564,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Widget buildChatBox(BuildContext context) {
-    bool basic = _chatLevelItem?.index == 0 ? false : true;
+    ChatLevel cl = _prefs.getChatLevelSetting();
+    log("CL: $cl");
+    //bool basic = _chatLevelItem?.index == 0 ? false : true;
+    bool basic = _prefs.getChatLevelSetting().index == 0 ? false : true;
     return Expanded(
         child: Container(
             color: Colors.blueGrey[50],
@@ -729,61 +727,82 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_chatLevelItem == null) {
-      return const Scaffold(body: CircularProgressIndicator());
-    } else {
-      if (autoScroll) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          chatBoxScrollController
-              .jumpTo(chatBoxScrollController.position.maxScrollExtent);
-        });
-      }
-      return ScaffoldMessenger(
+    // if (_chatLevelItem == null) {
+    //   return const Scaffold(body: CircularProgressIndicator());
+    // } else {
+    //   if (autoScroll) {
+    //     WidgetsBinding.instance.addPostFrameCallback((_) {
+    //       chatBoxScrollController
+    //           .jumpTo(chatBoxScrollController.position.maxScrollExtent);
+    //     });
+    //   }
+
+    return ScaffoldMessenger(
         key: Snackbar.snackBarKeyC,
         child: Scaffold(
-          appBar: AppBar(
-            title: Text(widget.device.platformName),
-            actions: [
-              buildConnectButton(context),
-              IconButton(
-                  onPressed: () async {
-                    MaterialPageRoute route = MaterialPageRoute(
-                        builder: (context) => const AppSettingsScreen(),
-                        settings:
-                            const RouteSettings(name: '/AppSettingsScreen'));
-                    final result = await Navigator.of(context).push(route);
-                    if (result != null) {
-                      //when we're coming from settings page we need to refresh this page to account for new settings
-                      setState(() {
-                        _chatLevelItem = settings.getChatLevelSetting();
-                        //Snackbar.show(ABC.c, result, success: true);
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.settings))
-            ],
-          ),
-          body: Container(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              children: <Widget>[
-                buildRemoteId(context),
-                ListTile(
-                    contentPadding: const EdgeInsets.only(right: 0.0),
-                    leading: buildRssiTile(context),
-                    title: buildBatteryTile(context),
-                    trailing: buildDotMenu(context)),
-                buildChatBox(context),
-                buildSendCommandBox(context),
+            appBar: AppBar(
+              title: Text(widget.device.platformName),
+              actions: [
+                buildConnectButton(context),
+                IconButton(
+                    onPressed: () async {
+                      MaterialPageRoute route = MaterialPageRoute(
+                          builder: (context) => const AppSettingsScreen(),
+                          settings:
+                              const RouteSettings(name: '/AppSettingsScreen'));
+                      final result = await Navigator.of(context).push(route);
+                      if (result != null) {
+                        //when we're coming from settings page we need to refresh this page and reload settings cache to account for possible new settings
+                        await _prefs.reloadPrefs();
 
-                //buildChatBox(context),
-                //buildMtuTile(context),
-                //..._buildServiceTiles(context, widget.device),
+                        setState(() {
+                          _prefs.getChatLevelSetting();
+                          //_chatLevelItem = settings.getChatLevelSetting();
+                          //Snackbar.show(ABC.c, result, success: true);
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.settings))
               ],
             ),
-          ),
-        ),
-      );
-    }
+            body: FutureBuilder(
+                future: _prefsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    if (autoScroll) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        chatBoxScrollController.jumpTo(
+                            chatBoxScrollController.position.maxScrollExtent);
+                      });
+                    }
+                    return Container(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        children: <Widget>[
+                          buildRemoteId(context),
+                          ListTile(
+                              contentPadding: const EdgeInsets.only(right: 0.0),
+                              leading: buildRssiTile(context),
+                              title: buildBatteryTile(context),
+                              trailing: buildDotMenu(context)),
+                          buildChatBox(context),
+                          buildSendCommandBox(context),
+
+                          //buildChatBox(context),
+                          //buildMtuTile(context),
+                          //..._buildServiceTiles(context, widget.device),
+                        ],
+                      ),
+                    );
+                  }
+                  return const Scaffold(
+                    body: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  );
+                })));
   }
 }
