@@ -3,32 +3,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum ChatLevel { basic, advanced }
 
 class AppSettings {
-  SharedPreferences? prefs;
+  late final SharedPreferencesWithCache _prefs;
 
   AppSettings();
 
-  Future<bool> initPrefs() async {
-    prefs = await SharedPreferences.getInstance();
-    if (prefs!.getInt('chatLevel') == null) {
-      await prefs!.setInt('chatLevel', 0); //ChatLevel.basic default setting
-    }
-    return false;
+  Future initPrefs() async {
+    return await SharedPreferencesWithCache.create(
+      cacheOptions: const SharedPreferencesWithCacheOptions(),
+    ).then((v) => {
+          _prefs = v,
+          if (_prefs.getInt('chatLevel') == null)
+            {
+              _prefs.setInt('chatLevel', 0) //ChatLevel.basic default setting
+            }
+        });
   }
 
-  void setPrefs(String key, int value) async {
-    if (prefs == null) {
-      throw 'You must initialize AppSettings first';
-    }
-    prefs!.setInt(key, value);
+  void setPref(String key, int value) async {
+    _prefs.setInt(key, value);
   }
 
   ChatLevel getChatLevelSetting() {
-    if (prefs == null) {
-      throw 'You must initialize AppSettings first';
-    }
-    if (prefs!.getInt('chatLevel') == null) {
+    if (_prefs.getInt('chatLevel') == null) {
       throw 'chatLevel setting has not been initialized';
     }
-    return ChatLevel.values[prefs!.getInt("chatLevel")!];
+    return ChatLevel.values[_prefs.getInt("chatLevel")!];
   }
 }

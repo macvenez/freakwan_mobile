@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/settings.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -10,13 +10,18 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
-  ChatLevel? _chatLevelItem;
+  //ChatLevel? _chatLevelItem;
 
-  late final SharedPreferences _prefs;
-  late final _prefsFuture = SharedPreferences.getInstance().then((v) => {
-        _prefs = v,
-        _chatLevelItem = ChatLevel.values[_prefs.getInt("chatLevel")!]
-      });
+  // late final SharedPreferencesWithCache _prefs;
+  // late final _prefsFuture = SharedPreferencesWithCache.create(
+  //   cacheOptions: const SharedPreferencesWithCacheOptions(),
+  // ).then((v) => {
+  //       _prefs = v,
+  //       //_chatLevelItem = ChatLevel.values[_prefs.getInt("chatLevel")!]
+  //     });
+
+  final AppSettings _prefs = AppSettings();
+  late final _prefsFuture = _prefs.initPrefs();
 
   @override
   void initState() {
@@ -49,11 +54,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       ),
                       RadioListTile<ChatLevel>(
                         value: ChatLevel.basic,
-                        groupValue: _chatLevelItem,
+                        groupValue: _prefs.getChatLevelSetting(),
                         onChanged: (ChatLevel? value) {
-                          _prefs.setInt("chatLevel", value!.index);
                           setState(() {
-                            _chatLevelItem = value;
+                            _prefs.setPref("chatLevel", value!.index);
                           });
                         },
                         title: const Text('Basic'),
@@ -62,11 +66,10 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       ),
                       RadioListTile<ChatLevel>(
                         value: ChatLevel.advanced,
-                        groupValue: _chatLevelItem,
+                        groupValue: _prefs.getChatLevelSetting(),
                         onChanged: (ChatLevel? value) {
-                          _prefs.setInt("chatLevel", value!.index);
                           setState(() {
-                            _chatLevelItem = value;
+                            _prefs.setPref("chatLevel", value!.index);
                           });
                         },
                         title: const Text('Advanced'),
@@ -83,11 +86,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
           return const Scaffold(
             body: Padding(
               padding: EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  CircularProgressIndicator(),
-                ],
+              child: Center(
+                child: CircularProgressIndicator(),
               ),
             ),
           );
