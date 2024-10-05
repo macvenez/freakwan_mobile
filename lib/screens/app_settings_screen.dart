@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+
 import '../utils/settings.dart';
-//import 'package:shared_preferences/shared_preferences.dart';
 
 class AppSettingsScreen extends StatefulWidget {
   const AppSettingsScreen({super.key});
@@ -10,18 +10,8 @@ class AppSettingsScreen extends StatefulWidget {
 }
 
 class _AppSettingsScreenState extends State<AppSettingsScreen> {
-  //ChatLevel? _chatLevelItem;
-
-  // late final SharedPreferencesWithCache _prefs;
-  // late final _prefsFuture = SharedPreferencesWithCache.create(
-  //   cacheOptions: const SharedPreferencesWithCacheOptions(),
-  // ).then((v) => {
-  //       _prefs = v,
-  //       //_chatLevelItem = ChatLevel.values[_prefs.getInt("chatLevel")!]
-  //     });
-
   final AppSettings _prefs = AppSettings();
-  late final _prefsFuture = _prefs.initPrefs();
+  late Future _prefsFuture = _prefs.initPrefs();
 
   @override
   void initState() {
@@ -39,9 +29,11 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
         title: const Text("App settings"),
       ),
       body: FutureBuilder(
+        //we have to use FutureBuilder because the preferences must be awaited
         future: _prefsFuture,
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
+          if (snapshot.connectionState != ConnectionState.waiting) {
+            // only show the settings if we're not waiting for the future to complete
             return Column(children: <Widget>[
               Container(
                   padding:
@@ -79,6 +71,14 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ],
                   )),
               const Divider(),
+              ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      //we should wait again for the future to complete, we can show again CircularProgressIndicator while we await for the settings to be reset
+                      _prefsFuture = _prefs.applyDefaultSettings();
+                    });
+                  },
+                  child: const Text("Reload default settings"))
             ]); // `_prefs` is ready for use.
           }
 

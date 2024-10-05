@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum ChatLevel { basic, advanced }
 
 class AppSettings {
-  late final SharedPreferencesWithCache _prefs;
+  late SharedPreferencesWithCache _prefs;
 
   AppSettings();
 
@@ -25,6 +25,11 @@ class AppSettings {
 
   Future reloadPrefs() async {
     return _prefs.reloadCache();
+  }
+
+  Future applyDefaultSettings() async {
+    await _prefs.clear();
+    return await initPrefs();
   }
 
   ChatLevel getChatLevelSetting() {

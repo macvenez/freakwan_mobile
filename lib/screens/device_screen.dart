@@ -86,10 +86,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   bool nearbyNodesDataready = false;
 
   final AppSettings _prefs = AppSettings();
-  late var _prefsFuture = _prefs.initPrefs();
-
-  ChatLevel?
-      _chatLevelItem; //which "chat level" are we on (to display messages and commands or only messages)
+  late final _prefsFuture = _prefs.initPrefs();
 
   String nodeSettingsRadioPreset = radioPresetsList.first;
 
