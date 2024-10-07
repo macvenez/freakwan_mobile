@@ -41,7 +41,7 @@ class DeviceScreen extends StatefulWidget {
   State<DeviceScreen> createState() => _DeviceScreenState();
 }
 
-enum MenuItem { showNearby, nodeSettings, itemThree }
+enum MenuItem { showNearby, nodeSettings }
 
 class _DeviceScreenState extends State<DeviceScreen> {
   int? _rssi;
@@ -224,12 +224,14 @@ class _DeviceScreenState extends State<DeviceScreen> {
       }
       setState(() {
         //we'll add the message to the list with type cmdReceived, this will trigger a rebuild of the interface containing messages
-        messages.add(MessageItem(data, MessageType.cmdReceived));
+        messages
+            .add(MessageItem(data, MessageType.cmdReceived, DateTime.now()));
       });
     } else {
       //if all previous regexps are not matched it must be a message originated from another node
       setState(() {
-        messages.add(MessageItem(data, MessageType.msgReceived));
+        messages
+            .add(MessageItem(data, MessageType.msgReceived, DateTime.now()));
       });
     }
 
@@ -281,11 +283,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
     if (data.startsWith('!')) {
       //check if we're sending a command
       setState(() {
-        messages.add(MessageItem(data, MessageType.cmdSent));
+        messages.add(MessageItem(data, MessageType.cmdSent, DateTime.now()));
       });
     } else {
       setState(() {
-        messages.add(MessageItem(data, MessageType.msgSent));
+        messages.add(MessageItem(data, MessageType.msgSent, DateTime.now()));
       });
     }
     if (chatBoxScrollController.position.pixels ==
@@ -532,7 +534,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   Widget buildSendCommandBox(BuildContext context) {
     return SizedBox(
       //padding: EdgeInsets.all(10.0),
-      height: 100,
+      height: 70,
       child: Row(
         mainAxisAlignment:
             MainAxisAlignment.center, //Center Row contents horizontally,
@@ -561,9 +563,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Widget buildChatBox(BuildContext context) {
-    ChatLevel cl = _prefs.getChatLevelSetting();
-    log("CL: $cl");
-    //bool basic = _chatLevelItem?.index == 0 ? false : true;
     bool basic = _prefs.getChatLevelSetting().index == 0 ? false : true;
     return Expanded(
         child: Container(
@@ -594,19 +593,31 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return Align(
         alignment: messageAlignment,
         child: Container(
-          decoration: BoxDecoration(
-              border: Border.all(
-                color: borderColor,
-              ),
-              borderRadius: BorderRadius.circular(10),
-              color: borderColor),
-          padding: const EdgeInsets.all(10.0),
-          margin: const EdgeInsets.only(bottom: 3.0),
-          child: Text(
-            message.content,
-            textAlign: TextAlign.start,
-          ),
-        ));
+            decoration: BoxDecoration(
+                border: Border.all(
+                  color: borderColor,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: borderColor),
+            padding: const EdgeInsets.all(6.0),
+            child: IntrinsicWidth(
+                child: Column(children: [
+              Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    message.content,
+                  )),
+              Align(
+                  alignment: Alignment.bottomRight,
+                  child: Opacity(
+                      opacity: 0.5,
+                      child: Text(
+                        "${message.time.hour.toString().padLeft(2, '0')}:${message.time.minute.toString().padLeft(2, '0')}:${message.time.second.toString().padLeft(2, '0')}", //use padLeft to keep the leading 0 if number is in single digit (ex. 12:6 -> 12:06)
+                        style: DefaultTextStyle.of(context)
+                            .style
+                            .apply(fontSizeFactor: 0.8),
+                      )))
+            ]))));
   }
 
   Widget buildDotMenu(BuildContext context) {
