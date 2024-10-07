@@ -86,16 +86,15 @@ class _DeviceScreenState extends State<DeviceScreen> {
   bool nearbyNodesDataready = false;
 
   final AppSettings _prefs = AppSettings();
-  late final _prefsFuture = _prefs.initPrefs();
+  late final _prefsFuture = _prefs.initPrefs().then((v) => {});
 
   String nodeSettingsRadioPreset = radioPresetsList.first;
 
   @override
   void initState() {
     super.initState();
-
     chatBoxScrollController.addListener(() {
-      //if the user has scrolled to the bottom of the messages list then we'll autoscroll the new messages
+      //if the user has scrolled to the bottom of the messages list then we'll enable autoscroll for new messages
       if (chatBoxScrollController.position.pixels ==
           chatBoxScrollController.position.maxScrollExtent) {
         //Snackbar.show(ABC.c, "END OF SCROLL", success: true);
@@ -123,22 +122,27 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 rxChannel); //we'll subscribe to the rxChannel and wait for new messages coming from the node
             requestDeviceInfo(
                 txChannel); //ask the device its informations for the first time
-            if (updateDeviceInfoTask?.isActive != true) {
-              //check if the periodic task already exists to avoid creating multiple ones
-              updateDeviceInfoTask = Timer.periodic(
-                const Duration(
-                  seconds: 20,
-                ),
-                (t) => requestDeviceInfo(
-                    txChannel), //each 20 seconds we'll ask the device for info, processBuffer will process all relative informations
-              );
-            }
 
             _lastValueSubscription = rxChannel.lastValueStream.listen((value) {
               //we'll process all messages received from the device
               _value = value;
               processBuffer(String.fromCharCodes(_value));
             });
+
+            Future.wait([_prefsFuture]).then(
+              (value) {
+                if (updateDeviceInfoTask?.isActive != true) {
+                  //check if the periodic task already exists to avoid creating multiple ones
+                  updateDeviceInfoTask = Timer.periodic(
+                    Duration(
+                      seconds: _prefs.getDevicePollIntervalSetting(),
+                    ),
+                    (t) => requestDeviceInfo(
+                        txChannel), //each 20 seconds we'll ask the device for info, processBuffer will process all relative informations
+                  );
+                }
+              },
+            );
           }
         }
       }
@@ -600,6 +604,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 borderRadius: BorderRadius.circular(8),
                 color: borderColor),
             padding: const EdgeInsets.all(6.0),
+            margin: const EdgeInsets.only(bottom: 2.0),
             child: IntrinsicWidth(
                 child: Column(children: [
               Align(
@@ -735,16 +740,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // if (_chatLevelItem == null) {
-    //   return const Scaffold(body: CircularProgressIndicator());
-    // } else {
-    //   if (autoScroll) {
-    //     WidgetsBinding.instance.addPostFrameCallback((_) {
-    //       chatBoxScrollController
-    //           .jumpTo(chatBoxScrollController.position.maxScrollExtent);
-    //     });
-    //   }
-
     return ScaffoldMessenger(
         key: Snackbar.snackBarKeyC,
         child: Scaffold(
@@ -761,7 +756,24 @@ class _DeviceScreenState extends State<DeviceScreen> {
                       final result = await Navigator.of(context).push(route);
                       if (result != null) {
                         //when we're coming from settings page we need to refresh this page and reload settings cache to account for possible new settings
+                        int previousDevicePollInterval =
+                            _prefs.getDevicePollIntervalSetting();
                         await _prefs.reloadPrefs();
+                        if (_prefs.getDevicePollIntervalSetting() !=
+                            previousDevicePollInterval) {
+                          //pollInterval has been changed from settings
+                          if (updateDeviceInfoTask?.isActive == true) {
+                            //if the timer has been initialized and is running
+                            updateDeviceInfoTask?.cancel(); //stop the timer
+                          }
+                          updateDeviceInfoTask = Timer.periodic(
+                            Duration(
+                              seconds: _prefs.getDevicePollIntervalSetting(),
+                            ),
+                            (t) => requestDeviceInfo(
+                                txChannel), //each 20 seconds we'll ask the device for info, processBuffer will process all relative informations
+                          );
+                        }
 
                         setState(() {
                           _prefs.getChatLevelSetting();

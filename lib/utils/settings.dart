@@ -8,19 +8,41 @@ class AppSettings {
   AppSettings();
 
   Future initPrefs() async {
-    return await SharedPreferencesWithCache.create(
+    // return await SharedPreferencesWithCache.create(
+    //   cacheOptions: const SharedPreferencesWithCacheOptions(),
+    // ).then((v) => {
+    //       _prefs = v,
+    //       if (_prefs.getInt('chatLevel') == null)
+    //         {
+    //           _prefs.setInt('chatLevel', 0), //ChatLevel.basic default setting
+    //           _prefs.setDouble('devicePoll',
+    //               20.0) //default of 20 seconds for device poll (battery, rssi)
+    //         }
+    //       // if (_prefs.getDouble('devicePoll') == null) {
+    //       //   _prefs.setDouble('devicePoll',
+    //       //       20.0); //default of 20 seconds for device poll (battery, rssi)
+    //       // }
+    //       // return;
+    //     });
+    _prefs = await SharedPreferencesWithCache.create(
       cacheOptions: const SharedPreferencesWithCacheOptions(),
-    ).then((v) => {
-          _prefs = v,
-          if (_prefs.getInt('chatLevel') == null)
-            {
-              _prefs.setInt('chatLevel', 0) //ChatLevel.basic default setting
-            }
-        });
+    );
+    if (_prefs.getInt('chatLevel') == null) {
+      _prefs.setInt('chatLevel', 0); //ChatLevel.basic default setting
+    }
+    if (_prefs.getInt('devicePoll') == null) {
+      _prefs.setInt('devicePoll',
+          20); //default of 20 seconds for device poll (battery, rssi)
+    }
+    return;
   }
 
-  void setPref(String key, int value) async {
+  void setIntPref(String key, int value) async {
     _prefs.setInt(key, value);
+  }
+
+  void setDoublePref(String key, double value) async {
+    _prefs.setDouble(key, value);
   }
 
   Future reloadPrefs() async {
@@ -37,5 +59,12 @@ class AppSettings {
       throw 'chatLevel setting has not been initialized';
     }
     return ChatLevel.values[_prefs.getInt("chatLevel")!];
+  }
+
+  int getDevicePollIntervalSetting() {
+    if (_prefs.getInt('devicePoll') == null) {
+      throw 'devicePoll setting has not been initialized';
+    }
+    return _prefs.getInt("devicePoll")!;
   }
 }

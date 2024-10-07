@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:developer';
 
 import '../utils/settings.dart';
 
@@ -34,7 +36,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.waiting) {
             // only show the settings if we're not waiting for the future to complete
-            return Column(children: <Widget>[
+            return SingleChildScrollView(
+                child: Column(children: <Widget>[
               Container(
                   padding:
                       const EdgeInsets.only(top: 16.0, left: 16.0, right: 22.0),
@@ -49,7 +52,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         groupValue: _prefs.getChatLevelSetting(),
                         onChanged: (ChatLevel? value) {
                           setState(() {
-                            _prefs.setPref("chatLevel", value!.index);
+                            _prefs.setIntPref("chatLevel", value!.index);
                           });
                         },
                         title: const Text('Basic'),
@@ -61,7 +64,7 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                         groupValue: _prefs.getChatLevelSetting(),
                         onChanged: (ChatLevel? value) {
                           setState(() {
-                            _prefs.setPref("chatLevel", value!.index);
+                            _prefs.setIntPref("chatLevel", value!.index);
                           });
                         },
                         title: const Text('Advanced'),
@@ -70,6 +73,29 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                       ),
                     ],
                   )),
+              //const Divider(),
+              Container(
+                padding:
+                    const EdgeInsets.only(top: 16.0, left: 16.0, right: 22.0),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Device info poll interval",
+                      ),
+                      TextFormField(
+                        initialValue:
+                            _prefs.getDevicePollIntervalSetting().toString(),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: <TextInputFormatter>[
+                          FilteringTextInputFormatter.digitsOnly
+                        ], // Only numbers can be entered
+                        onFieldSubmitted: (String value) {
+                          _prefs.setIntPref("devicePoll", int.parse(value));
+                        },
+                      ),
+                    ]),
+              ),
               const Divider(),
               ElevatedButton(
                   onPressed: () {
@@ -79,7 +105,8 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     });
                   },
                   child: const Text("Reload default settings"))
-            ]); // `_prefs` is ready for use.
+            ]) // `_prefs` is ready for use.
+                );
           }
 
           // `_prefs` is not ready yet, show loading bar till then.
