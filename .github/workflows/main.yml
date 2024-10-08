@@ -15,6 +15,24 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+
+        #10 Extract Version
+      - name: Extract version from pubspec.yaml
+        id: extract_version
+        run: |
+          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "VERSION=$version" >> $GITHUB_ENV
+          
+        #11 Check if Tag Exists
+      - name: Check if Tag Exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ github.run_number}}" >/dev/null 2>&1; then
+            echo "TAG_EXISTS=true" >> $GITHUB_ENV
+          else
+            echo "TAG_EXISTS=false" >> $GITHUB_ENV
+          fi
+
         #2 Setup Java
       - name: Set Up Java
         uses: actions/setup-java@v3.12.0
@@ -53,28 +71,20 @@ jobs:
 
         #10 Extract Version
       - name: Extract version from pubspec.yaml
-        id: extract_version
         run: |
           version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
           echo "VERSION=$version" >> $GITHUB_ENV
           
         #11 Check if Tag Exists
       - name: Check if Tag Exists
-        id: check_tag
         run: |
           if git rev-parse "v${{ github.run_number}}" >/dev/null 2>&1; then
             echo "TAG_EXISTS=true" >> $GITHUB_ENV
+            echo "Version already exists, waiting for new version to create release"
+            exit 1
           else
             echo "TAG_EXISTS=false" >> $GITHUB_ENV
           fi
-
-        #12 Modify Tag if it Exists
-      - name: Modify Tag
-        if: env.TAG_EXISTS == 'true'
-        id: modify_tag
-        run: |
-          new_version="${{ github.run_number}}-build-${{ github.run_number }}"
-          echo "VERSION=$new_version" >> $GITHUB_ENV
 
         #13 Create Release
       - name: Create Release
