@@ -27,7 +27,7 @@ jobs:
       - name: Check if Tag Exists
         id: check_tag
         run: |
-          if git rev-parse "v$version" >/dev/null 2>&1; then
+          if git rev-parse "v${{env.VERSION}}" >/dev/null 2>&1; then
             echo "TAG_EXISTS=true" >> $GITHUB_ENV
             exit 1
           else
@@ -70,27 +70,10 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
 
-        #10 Extract Version
-      - name: Extract version from pubspec.yaml
-        run: |
-          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
-          echo "VERSION=$version" >> $GITHUB_ENV
-          
-        #11 Check if Tag Exists
-      - name: Check if Tag Exists
-        run: |
-          if git rev-parse "v${{ github.run_number}}" >/dev/null 2>&1; then
-            echo "TAG_EXISTS=true" >> $GITHUB_ENV
-            echo "Version already exists, waiting for new version to create release"
-            exit 1
-          else
-            echo "TAG_EXISTS=false" >> $GITHUB_ENV
-          fi
-
         #13 Create Release
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/flutter-apk/app-release.apk,build/app/outputs/bundle/release/app-release.aab,build/ios_build.tar.gz"
-          tag: v${{ github.run_number}}
+          tag: v${{ env.VERSION}}
           token: ${{ secrets.TOKEN }}
