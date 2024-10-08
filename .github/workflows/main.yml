@@ -32,6 +32,7 @@ jobs:
             exit 1
           else
             echo "TAG_EXISTS=false" >> $GITHUB_ENV
+            exit 1
           fi
 
         #2 Setup Java
