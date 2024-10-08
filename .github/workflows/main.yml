@@ -1,0 +1,2 @@
+- name: Builds - build Flutter APK and create github release
+  uses: Dank-del/flutter-build-and-publish-action@v1
