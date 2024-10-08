@@ -14,6 +14,8 @@ jobs:
         #1 Checkout Repository
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
 
         #10 Extract Version
@@ -32,7 +34,6 @@ jobs:
             exit 1
           else
             echo "TAG_EXISTS=false" >> $GITHUB_ENV
-            exit 1
           fi
 
         #2 Setup Java
