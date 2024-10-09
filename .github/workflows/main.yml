@@ -57,8 +57,11 @@ jobs:
 
         
        #6 Building APK
-      - name: Build APK
+      - name: Build APK for all abi splitted
         run: flutter build apk --split-per-abi
+
+      - name: Build APK
+        run: flutter build apk --release
 
         #7 Building App Bundle (aab)
       - name: Build appBundle
