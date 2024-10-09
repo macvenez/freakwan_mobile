@@ -97,17 +97,24 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
                     ]),
               ),
               Container(
-                  child: Switch(
-                // This bool value toggles the switch.
-                value: _prefs.getGPSSetting(),
-                activeColor: Colors.red,
-                onChanged: (bool value) {
-                  // This is called when the user toggles the switch.
-                  setState(() {
-                    _prefs.setBoolPref("useGPS", value);
-                  });
-                },
-              )),
+                  padding:
+                      const EdgeInsets.only(top: 16.0, left: 16.0, right: 22.0),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text("Use GPS funtionalities"),
+                        Switch(
+                          // This bool value toggles the switch.
+                          value: _prefs.getGPSSetting(),
+                          activeColor: Colors.deepPurpleAccent[300],
+                          onChanged: (bool value) {
+                            // This is called when the user toggles the switch.
+                            setState(() {
+                              _prefs.setBoolPref("useGPS", value);
+                            });
+                          },
+                        )
+                      ])),
               const Divider(),
               ElevatedButton(
                   onPressed: () {

@@ -177,26 +177,24 @@ class _DeviceScreenState extends State<DeviceScreen> {
         setState(() {});
       }
     });
-    // Future.wait([_prefsFuture]).then((_) {
-    //   if (_prefs.getGPSSetting() == true) {
-    //     log("GPS will be used");
-    //     _determinePosition().catchError((error) {
-    //       log("GPS ERROR");
-    //       return Position(
-    //           longitude: 0,
-    //           latitude: 0,
-    //           timestamp: DateTime.now(),
-    //           accuracy: 0,
-    //           altitude: 0,
-    //           altitudeAccuracy: 0,
-    //           heading: 0,
-    //           headingAccuracy: 0,
-    //           speed: 0,
-    //           speedAccuracy: 0);
-    //     });
-    //   }
-    //   log("GPS won't be used");
-    // });
+    Future.wait([_prefsFuture]).then((_) {
+      if (_prefs.getGPSSetting() == true) {
+        _determinePosition().catchError((error) {
+          log("GPS ERROR");
+          return Position(
+              longitude: 0,
+              latitude: 0,
+              timestamp: DateTime.now(),
+              accuracy: 0,
+              altitude: 0,
+              altitudeAccuracy: 0,
+              heading: 0,
+              headingAccuracy: 0,
+              speed: 0,
+              speedAccuracy: 0);
+        });
+      }
+    });
   }
 
   @override
@@ -289,8 +287,17 @@ class _DeviceScreenState extends State<DeviceScreen> {
                       "Location is not enabled, if you don't want to use GPS funtionalities disable it from the app settings, otherwise enable GPS and restart the app"),
                   actions: <Widget>[
                     TextButton(
-                      onPressed: () => Navigator.pop(context, 'Cancel'),
-                      child: const Text('Close'),
+                      onPressed: () {
+                        _prefs.setBoolPref("useGPS", false);
+                        Navigator.pop(context, 'Cancel');
+                      },
+                      child: const Text('Disable GPS'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context, 'Cancel');
+                      },
+                      child: const Text('Restart app'),
                     ),
                   ],
                 ));
@@ -367,6 +374,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
         messages.add(MessageItem(data, MessageType.msgSent, DateTime.now()));
       });
     }
+
     if (chatBoxScrollController.position.pixels ==
         chatBoxScrollController.position.maxScrollExtent) {
       //Snackbar.show(ABC.c, "END OF SCROLL", success: true);
