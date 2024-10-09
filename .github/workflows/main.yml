@@ -41,6 +41,7 @@ jobs:
         with:
           distribution: 'oracle'
           java-version: '17'
+          cache: 'gradle'
 
         #3 Setup Flutter
       - name: Set Up Flutter
@@ -57,7 +58,7 @@ jobs:
         
        #6 Building APK
       - name: Build APK
-        run: flutter build apk --release
+        run: flutter build apk --split-per-abi
 
         #7 Building App Bundle (aab)
       - name: Build appBundle
