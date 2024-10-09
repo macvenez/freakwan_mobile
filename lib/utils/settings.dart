@@ -34,6 +34,9 @@ class AppSettings {
       _prefs.setInt('devicePoll',
           20); //default of 20 seconds for device poll (battery, rssi)
     }
+    if (_prefs.getBool('useGPS') == null) {
+      _prefs.setBool('useGPS', true); //use GPS by default
+    }
     return;
   }
 
@@ -43,6 +46,10 @@ class AppSettings {
 
   void setDoublePref(String key, double value) async {
     _prefs.setDouble(key, value);
+  }
+
+  void setBoolPref(String key, bool value) async {
+    _prefs.setBool(key, value);
   }
 
   Future reloadPrefs() async {
@@ -66,5 +73,12 @@ class AppSettings {
       throw 'devicePoll setting has not been initialized';
     }
     return _prefs.getInt("devicePoll")!;
+  }
+
+  bool getGPSSetting() {
+    if (_prefs.getBool('useGPS') == null) {
+      throw 'useGPS setting has not been initialized';
+    }
+    return _prefs.getBool("useGPS")!;
   }
 }

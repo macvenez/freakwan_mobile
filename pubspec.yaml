@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flutter_blue_plus:
   shared_preferences:
+  geolocator:
 
 dev_dependencies:
   flutter_test:

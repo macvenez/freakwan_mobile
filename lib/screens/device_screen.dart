@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:freakwan_mobile/screens/app_settings_screen.dart';
 
+import 'package:geolocator/geolocator.dart';
 //import '../widgets/service_tile.dart';
 //import '../widgets/characteristic_tile.dart';
 //import '../widgets/descriptor_tile.dart';
@@ -130,7 +131,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
             });
 
             Future.wait([_prefsFuture]).then(
-              (value) {
+              (_) {
                 if (updateDeviceInfoTask?.isActive != true) {
                   //check if the periodic task already exists to avoid creating multiple ones
                   updateDeviceInfoTask = Timer.periodic(
@@ -176,6 +177,26 @@ class _DeviceScreenState extends State<DeviceScreen> {
         setState(() {});
       }
     });
+    // Future.wait([_prefsFuture]).then((_) {
+    //   if (_prefs.getGPSSetting() == true) {
+    //     log("GPS will be used");
+    //     _determinePosition().catchError((error) {
+    //       log("GPS ERROR");
+    //       return Position(
+    //           longitude: 0,
+    //           latitude: 0,
+    //           timestamp: DateTime.now(),
+    //           accuracy: 0,
+    //           altitude: 0,
+    //           altitudeAccuracy: 0,
+    //           heading: 0,
+    //           headingAccuracy: 0,
+    //           speed: 0,
+    //           speedAccuracy: 0);
+    //     });
+    //   }
+    //   log("GPS won't be used");
+    // });
   }
 
   @override
@@ -247,6 +268,58 @@ class _DeviceScreenState extends State<DeviceScreen> {
       autoScroll = false;
       //Snackbar.show(ABC.c, "REMOVED AUTOSCROLL", success: true);
     }
+  }
+
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are not enabled don't continue
+      // accessing the position and request users of the
+      // App to enable the location services.
+      //Snackbar.show(ABC.c, "GPS is disabled", success: false);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        showDialog(
+            context: context,
+            builder: (BuildContext context) => AlertDialog(
+                  content: const Text(
+                      "Location is not enabled, if you don't want to use GPS funtionalities disable it from the app settings, otherwise enable GPS and restart the app"),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, 'Cancel'),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ));
+      });
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // returned true. According to Android guidelines
+        // your App should show an explanatory UI now.
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition();
   }
 
   bool get isConnected {
