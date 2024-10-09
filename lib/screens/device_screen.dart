@@ -272,6 +272,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
     bool serviceEnabled;
     LocationPermission permission;
 
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.lowest,
+    );
+
     // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -363,6 +367,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Future sendMessageOrCommand(BluetoothCharacteristic c, String data) async {
+    // if (_prefs.getGPSSetting()) {
+    //   Future<Position> position = _determinePosition().then((value) {
+    //     setState(() {});
+    //     return value;
+    //   });
+    // }
     //generic function to send data to the node
     if (data.startsWith('!')) {
       //check if we're sending a command
@@ -371,7 +381,24 @@ class _DeviceScreenState extends State<DeviceScreen> {
       });
     } else {
       setState(() {
-        messages.add(MessageItem(data, MessageType.msgSent, DateTime.now()));
+        if (_prefs.getGPSSetting()) {
+          messages.add(MessageItem.withPosition(
+              data,
+              MessageType.msgSent,
+              DateTime.now(),
+              _determinePosition().then((value) {
+                setState(() {});
+                return value;
+              })));
+        } else {
+          messages.add(MessageItem(
+            data,
+            MessageType.msgSent,
+            DateTime.now(),
+          ));
+        }
+
+        //messages.add(MessageItem(data, MessageType.msgSent, DateTime.now()));
       });
     }
 
@@ -702,7 +729,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
                         style: DefaultTextStyle.of(context)
                             .style
                             .apply(fontSizeFactor: 0.8),
-                      )))
+                      ))),
+              Text(message.getPosition())
             ]))));
   }
 
